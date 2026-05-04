@@ -10,9 +10,11 @@ import com.mindnote.BuildConfig
 import com.mindnote.core.storage.UserPrefs
 import com.mindnote.data.db.MindNoteDatabase
 import com.mindnote.data.remote.AuthApi
+import com.mindnote.data.remote.BearerAuth
 import com.mindnote.data.remote.ChatApi
 import com.mindnote.data.remote.NotesApi
 import com.mindnote.data.remote.OcrApi
+import kotlinx.coroutines.flow.first
 import com.mindnote.data.repository.LocalUserRepository
 import com.mindnote.data.repository.RoomFavoritesRepository
 import com.mindnote.data.repository.RoomNotesRepository
@@ -65,7 +67,8 @@ val appModule = module {
     single { get<MindNoteDatabase>().favoriteDao() }
 
     single {
-        val deviceId = get<UserPrefs>().deviceIdBlocking()
+        val userPrefs = get<UserPrefs>()
+        val deviceId = userPrefs.deviceIdBlocking()
         Log.i("MindNote", "Device ID: $deviceId")
         HttpClient(OkHttp) {
             expectSuccess = true
@@ -80,6 +83,9 @@ val appModule = module {
                 level = if (BuildConfig.DEBUG) LogLevel.INFO else LogLevel.NONE
             }
             install(SSE)
+            install(BearerAuth) {
+                tokenSource = { userPrefs.authTokenFlow.first() }
+            }
             defaultRequest {
                 url(BuildConfig.BASE_URL)
                 contentType(ContentType.Application.Json)
