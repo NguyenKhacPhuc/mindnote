@@ -15,6 +15,7 @@ object Database {
             SchemaUtils.createMissingTablesAndColumns(
                 Users, Notes, Topics, NoteTopics, Favorites,
                 Conversations, ChatMessages,
+                AuthAccounts, AuthTokens,
             )
             // FK target for all notes/favorites — single-user demo
             Users.ensureLocalUser()
