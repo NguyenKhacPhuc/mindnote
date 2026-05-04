@@ -64,6 +64,7 @@ fun Application.module() {
 
     routing {
         get("/health") { call.respondText("ok") }
+        authRoutes()
         notesRoutes()
         favoritesRoutes()
         chatRoutes(chatProvider)
