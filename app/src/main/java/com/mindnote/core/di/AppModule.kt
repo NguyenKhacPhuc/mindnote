@@ -9,6 +9,7 @@ import java.io.File
 import com.mindnote.BuildConfig
 import com.mindnote.core.storage.UserPrefs
 import com.mindnote.data.db.MindNoteDatabase
+import com.mindnote.data.remote.AuthApi
 import com.mindnote.data.remote.ChatApi
 import com.mindnote.data.remote.NotesApi
 import com.mindnote.data.remote.OcrApi
@@ -89,6 +90,7 @@ val appModule = module {
     single { NotesApi(get()) }
     single { ChatApi(get()) }
     single { OcrApi(get()) }
+    single { AuthApi(get()) }
 
     single<NotesRepository> { RoomNotesRepository(get(), get(), get(), get()) }
     single<FavoritesRepository> { RoomFavoritesRepository(get(), get()) }
