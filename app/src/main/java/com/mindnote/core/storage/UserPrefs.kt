@@ -24,12 +24,23 @@ class UserPrefs internal constructor(
 
     val onboardedFlow: Flow<Boolean> = dataStore.data.map { it[ONBOARDED] == true }
 
+    /** Current auth token, or null if the user is not signed in. */
+    val authTokenFlow: Flow<String?> = dataStore.data.map { it[AUTH_TOKEN] }
+
     suspend fun setUsername(name: String) {
         dataStore.edit { it[USERNAME] = name.trim() }
     }
 
     suspend fun setOnboarded(value: Boolean) {
         dataStore.edit { it[ONBOARDED] = value }
+    }
+
+    suspend fun setAuthToken(token: String) {
+        dataStore.edit { it[AUTH_TOKEN] = token }
+    }
+
+    suspend fun clearAuthToken() {
+        dataStore.edit { it.remove(AUTH_TOKEN) }
     }
 
     /** Synchronous read for cold-start nav routing. */
@@ -50,5 +61,6 @@ class UserPrefs internal constructor(
         val USERNAME = stringPreferencesKey("username")
         val ONBOARDED = booleanPreferencesKey("onboarded")
         val DEVICE_ID = stringPreferencesKey("device_id")
+        val AUTH_TOKEN = stringPreferencesKey("auth_token")
     }
 }
