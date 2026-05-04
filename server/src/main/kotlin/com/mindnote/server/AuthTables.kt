@@ -1,7 +1,10 @@
 package com.mindnote.server
 
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.innerJoin
+import org.jetbrains.exposed.sql.selectAll
 
 data class Account(
     val id: String,
@@ -27,3 +30,21 @@ object AuthTokens : Table("auth_tokens") {
 
     init { index(false, accountId) }
 }
+
+/**
+ * Resolve the [Account] owning [token], or null if the token is unknown / revoked.
+ * Caller must already be inside a `transaction { ... }` block.
+ */
+fun resolveAccountFromToken(token: String): Account? =
+    AuthTokens.innerJoin(AuthAccounts, { accountId }, { id })
+        .selectAll()
+        .where { AuthTokens.token eq token }
+        .firstOrNull()
+        ?.let {
+            Account(
+                id = it[AuthAccounts.id],
+                username = it[AuthAccounts.username],
+                passwordHash = it[AuthAccounts.passwordHash],
+                createdAt = it[AuthAccounts.createdAt],
+            )
+        }
