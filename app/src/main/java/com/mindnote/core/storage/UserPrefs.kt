@@ -46,6 +46,9 @@ class UserPrefs internal constructor(
     /** Synchronous read for cold-start nav routing. */
     fun isOnboardedBlocking(): Boolean = runBlocking { onboardedFlow.first() }
 
+    /** Synchronous token read for cold-start nav routing — null if signed out. */
+    fun authTokenBlocking(): String? = runBlocking { authTokenFlow.first() }
+
     /**
      * Stable per-install device ID. Generated on first read and persisted.
      * Sent as `X-Device-Id` on every API request so the server scopes data per device.

@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import com.mindnote.features.capture.CaptureScreen
 import com.mindnote.features.chat.ChatScreen
 import com.mindnote.features.home.HomeScreen
+import com.mindnote.features.login.LoginScreen
 import com.mindnote.features.notedetail.NoteDetailScreen
 import com.mindnote.features.notes.NotesScreen
 import com.mindnote.features.onboarding.OnboardingScreen
@@ -20,6 +21,9 @@ fun MindNoteNavHost(startDestination: String = Routes.Onboarding) {
     NavHost(navController = nav, startDestination = startDestination) {
         composable(Routes.Onboarding) {
             OnboardingScreen(onContinue = { nav.navigate(Routes.Home) })
+        }
+        composable(Routes.Login) {
+            LoginScreen()
         }
         composable(Routes.Home) {
             HomeScreen(
