@@ -10,6 +10,7 @@ import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.defaultheaders.DefaultHeaders
+import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
@@ -60,14 +61,21 @@ fun Application.module() {
             log.error("Unhandled", cause)
             call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (cause.message ?: "error")))
         }
+        bearerAuth401Envelope()
     }
+    installBearerAuth()
 
     routing {
+        // Exempt: never gated.
         get("/health") { call.respondText("ok") }
         authRoutes()
-        notesRoutes()
-        favoritesRoutes()
-        chatRoutes(chatProvider)
-        ocrRoutes(ocrProvider)
+
+        // Bearer-gated: every other endpoint requires a valid token.
+        authenticate(BEARER_AUTH) {
+            notesRoutes()
+            favoritesRoutes()
+            chatRoutes(chatProvider)
+            ocrRoutes(ocrProvider)
+        }
     }
 }

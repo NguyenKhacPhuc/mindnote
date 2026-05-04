@@ -36,35 +36,35 @@ internal fun ensureUser(userId: String) {
 fun Route.notesRoutes() {
     route("/notes") {
         get {
-            val userId = call.userIdFromHeader()
+            val accountId = call.account.id
             val offset = call.request.queryParameters["offset"]?.toIntOrNull()?.coerceAtLeast(0) ?: 0
             val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 30).coerceIn(1, 100)
             val notes = newSuspendedTransaction {
-                ensureUser(userId)
-                loadNotesForUser(userId, offset, limit)
+                ensureUser(accountId)
+                loadNotesForUser(accountId, offset, limit)
             }
             call.respond(notes)
         }
         get("{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-            val userId = call.userIdFromHeader()
-            val note = newSuspendedTransaction { loadNote(id, userId) }
+            val accountId = call.account.id
+            val note = newSuspendedTransaction { loadNote(id, accountId) }
             if (note == null) call.respond(HttpStatusCode.NotFound) else call.respond(note)
         }
         post {
             val body = call.receive<NoteCreateDto>()
-            val userId = call.userIdFromHeader()
+            val accountId = call.account.id
             val saved = newSuspendedTransaction {
-                ensureUser(userId)
-                insertNote(body, userId)
+                ensureUser(accountId)
+                insertNote(body, accountId)
             }
             call.respond(HttpStatusCode.Created, saved)
         }
         delete("{id}") {
             val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
-            val userId = call.userIdFromHeader()
+            val accountId = call.account.id
             val deleted = newSuspendedTransaction {
-                Notes.deleteWhere { (Notes.id eq id) and (Notes.userId eq userId) }
+                Notes.deleteWhere { (Notes.id eq id) and (Notes.userId eq accountId) }
             }
             if (deleted > 0) call.respond(HttpStatusCode.NoContent)
             else call.respond(HttpStatusCode.NotFound)
