@@ -1,11 +1,13 @@
 package com.mindnote.core.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.mindnote.core.auth.AuthEvents
 import com.mindnote.features.capture.CaptureScreen
 import com.mindnote.features.chat.ChatScreen
 import com.mindnote.features.home.HomeScreen
@@ -14,10 +16,26 @@ import com.mindnote.features.notedetail.NoteDetailScreen
 import com.mindnote.features.notes.NotesScreen
 import com.mindnote.features.onboarding.OnboardingScreen
 import com.mindnote.features.scan.ScanScreen
+import org.koin.compose.koinInject
 
 @Composable
-fun MindNoteNavHost(startDestination: String = Routes.Onboarding) {
+fun MindNoteNavHost(
+    startDestination: String = Routes.Onboarding,
+    authEvents: AuthEvents = koinInject(),
+) {
     val nav = rememberNavController()
+
+    // Server-driven sign-out: when AuthRevoked emits, bounce the user to Login and
+    // clear the back stack so they can't navigate "back" into a screen that needs auth.
+    LaunchedEffect(authEvents) {
+        authEvents.signedOut.collect {
+            nav.navigate(Routes.Login) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     NavHost(navController = nav, startDestination = startDestination) {
         composable(Routes.Onboarding) {
             OnboardingScreen(onContinue = { nav.navigate(Routes.Home) })
