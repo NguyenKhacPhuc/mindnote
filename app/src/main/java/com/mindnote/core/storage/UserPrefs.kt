@@ -15,19 +15,32 @@ import java.util.UUID
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
 
-class UserPrefs(context: Context) {
-    private val appContext = context.applicationContext
+class UserPrefs internal constructor(
+    private val dataStore: DataStore<Preferences>,
+) {
+    constructor(context: Context) : this(context.applicationContext.dataStore)
 
-    val usernameFlow: Flow<String> = appContext.dataStore.data.map { it[USERNAME].orEmpty() }
+    val usernameFlow: Flow<String> = dataStore.data.map { it[USERNAME].orEmpty() }
 
-    val onboardedFlow: Flow<Boolean> = appContext.dataStore.data.map { it[ONBOARDED] == true }
+    val onboardedFlow: Flow<Boolean> = dataStore.data.map { it[ONBOARDED] == true }
+
+    /** Current auth token, or null if the user is not signed in. */
+    val authTokenFlow: Flow<String?> = dataStore.data.map { it[AUTH_TOKEN] }
 
     suspend fun setUsername(name: String) {
-        appContext.dataStore.edit { it[USERNAME] = name.trim() }
+        dataStore.edit { it[USERNAME] = name.trim() }
     }
 
     suspend fun setOnboarded(value: Boolean) {
-        appContext.dataStore.edit { it[ONBOARDED] = value }
+        dataStore.edit { it[ONBOARDED] = value }
+    }
+
+    suspend fun setAuthToken(token: String) {
+        dataStore.edit { it[AUTH_TOKEN] = token }
+    }
+
+    suspend fun clearAuthToken() {
+        dataStore.edit { it.remove(AUTH_TOKEN) }
     }
 
     /** Synchronous read for cold-start nav routing. */
@@ -38,9 +51,9 @@ class UserPrefs(context: Context) {
      * Sent as `X-Device-Id` on every API request so the server scopes data per device.
      */
     fun deviceIdBlocking(): String = runBlocking {
-        val existing = appContext.dataStore.data.map { it[DEVICE_ID] }.first()
+        val existing = dataStore.data.map { it[DEVICE_ID] }.first()
         existing ?: UUID.randomUUID().toString().also { generated ->
-            appContext.dataStore.edit { it[DEVICE_ID] = generated }
+            dataStore.edit { it[DEVICE_ID] = generated }
         }
     }
 
@@ -48,5 +61,6 @@ class UserPrefs(context: Context) {
         val USERNAME = stringPreferencesKey("username")
         val ONBOARDED = booleanPreferencesKey("onboarded")
         val DEVICE_ID = stringPreferencesKey("device_id")
+        val AUTH_TOKEN = stringPreferencesKey("auth_token")
     }
 }
