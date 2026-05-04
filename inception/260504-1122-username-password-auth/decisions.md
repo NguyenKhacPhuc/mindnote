@@ -54,3 +54,10 @@ tags:
 
 - **Decision:** Story files use one shape across BE + Android (lane is just a tag). No per-lane "implementation steps" or "files to touch" sections — Construction owns those.
 - **Rationale:** Carryover of the AI-SDLC framework's Inception v0.2 boundary change. Documented for traceability since this is the first feature spec'd under v0.2.
+
+### D8 — H2 in-memory for BE DB-backed unit tests (logged in Construction)
+
+- **Decision:** Add `com.h2database:h2:2.3.232` as a `testImplementation` in `server/build.gradle.kts` and write DB-backed unit tests against an in-memory H2 instance (PostgreSQL compatibility mode).
+- **Rationale:** The BE auth foundation story (#23) needs a test that persists `Account`+`AuthToken` then resolves an Account from a token — a real DB. Existing BE tests (`OcrRoutesTest`) are pure-HTTP and don't touch the DB, so there's no precedent. H2 in-memory is the lightest path; Testcontainers-Postgres would be heavier (Docker dependency in CI).
+- **Trade-off:** H2 is not Postgres — features like `RETURNING`, jsonb, partial indexes won't behave identically. For the auth slice (basic tables, FKs, unique indexes, simple SELECT/JOIN) this is fine. If a future story needs Postgres-only behavior the test for that story switches to Testcontainers.
+- **Driver:** confirmed in Construction of #23.
