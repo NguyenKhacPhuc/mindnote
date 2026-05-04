@@ -8,6 +8,7 @@ import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Database as ExposedDatabase
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -20,8 +21,17 @@ class AuthTablesTest {
             driver = "org.h2.Driver",
         )
         transaction {
-            SchemaUtils.create(AuthAccounts)
+            SchemaUtils.create(AuthAccounts, AuthTokens)
             block()
+        }
+    }
+
+    private fun insertAccount(id: String, username: String) {
+        AuthAccounts.insert {
+            it[AuthAccounts.id] = id
+            it[AuthAccounts.username] = username
+            it[passwordHash] = "hash-$id"
+            it[createdAt] = 1L
         }
     }
 
@@ -73,5 +83,68 @@ class AuthTablesTest {
         val row = AuthAccounts.selectAll().where { AuthAccounts.id eq "acct-1" }.single()
         assertNotNull(row[AuthAccounts.passwordHash])
         assertEquals(longHash, row[AuthAccounts.passwordHash])
+    }
+
+    @Test
+    fun `insert + select round-trips an auth token`() = withDb {
+        insertAccount("acct-1", "alice_42")
+        AuthTokens.insert {
+            it[token] = "opaque-token-abc"
+            it[accountId] = "acct-1"
+            it[createdAt] = 1_700_000_000L
+        }
+
+        val row = AuthTokens.selectAll().where { AuthTokens.token eq "opaque-token-abc" }.single()
+        assertEquals("opaque-token-abc", row[AuthTokens.token])
+        assertEquals("acct-1", row[AuthTokens.accountId])
+        assertEquals(1_700_000_000L, row[AuthTokens.createdAt])
+    }
+
+    @Test
+    fun `unique token constraint rejects duplicates`() = withDb {
+        insertAccount("acct-1", "alice_42")
+        AuthTokens.insert {
+            it[token] = "dup-token"
+            it[accountId] = "acct-1"
+            it[createdAt] = 1L
+        }
+        assertFailsWith<ExposedSQLException> {
+            AuthTokens.insert {
+                it[token] = "dup-token"
+                it[accountId] = "acct-1"
+                it[createdAt] = 2L
+            }
+        }
+    }
+
+    @Test
+    fun `deleting an account cascades to its tokens`() = withDb {
+        insertAccount("acct-1", "alice_42")
+        AuthTokens.insert {
+            it[token] = "tok-1"
+            it[accountId] = "acct-1"
+            it[createdAt] = 1L
+        }
+        AuthTokens.insert {
+            it[token] = "tok-2"
+            it[accountId] = "acct-1"
+            it[createdAt] = 2L
+        }
+        assertEquals(2, AuthTokens.selectAll().count())
+
+        AuthAccounts.deleteWhere { AuthAccounts.id eq "acct-1" }
+
+        assertEquals(0, AuthTokens.selectAll().count())
+    }
+
+    @Test
+    fun `inserting a token for a non-existent account fails the FK`() = withDb {
+        assertFailsWith<ExposedSQLException> {
+            AuthTokens.insert {
+                it[token] = "tok-orphan"
+                it[accountId] = "ghost-account"
+                it[createdAt] = 1L
+            }
+        }
     }
 }
