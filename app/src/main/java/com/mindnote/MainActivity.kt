@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.mindnote.core.navigation.MindNoteNavHost
-import com.mindnote.core.navigation.Routes
+import com.mindnote.core.navigation.decideStartDestination
 import com.mindnote.core.storage.UserPrefs
 import com.mindnote.design.MindNoteTheme
 import org.koin.android.ext.android.inject
@@ -15,7 +15,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val startDestination = if (userPrefs.isOnboardedBlocking()) Routes.Home else Routes.Onboarding
+        val startDestination = decideStartDestination(
+            hasToken = userPrefs.authTokenBlocking() != null,
+            isOnboarded = userPrefs.isOnboardedBlocking(),
+        )
         enableEdgeToEdge()
         setContent {
             MindNoteTheme { MindNoteNavHost(startDestination = startDestination) }
