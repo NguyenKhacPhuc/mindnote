@@ -1,5 +1,6 @@
 package com.mindnote.server
 
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
@@ -10,6 +11,7 @@ import java.security.SecureRandom
 import java.util.UUID
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -18,7 +20,37 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 fun Route.authRoutes() {
     route("/auth") {
         post("/register") { call.handleRegister() }
+        post("/logout") { call.handleLogout() }
     }
+}
+
+private suspend fun io.ktor.server.application.ApplicationCall.handleLogout() {
+    // Parse the token inline (no Bearer middleware dependency — see story #26 hint option b).
+    val token = request.headers[HttpHeaders.Authorization]
+        ?.removePrefix("Bearer ")
+        ?.takeIf { it.isNotBlank() }
+
+    if (token == null) {
+        respond(
+            HttpStatusCode.Unauthorized,
+            ErrorEnvelope(ErrorBody(code = "invalid_token", message = "missing or invalid token")),
+        )
+        return
+    }
+
+    val deleted = newSuspendedTransaction {
+        AuthTokens.deleteWhere { AuthTokens.token eq token }
+    }
+
+    if (deleted == 0) {
+        respond(
+            HttpStatusCode.Unauthorized,
+            ErrorEnvelope(ErrorBody(code = "invalid_token", message = "missing or invalid token")),
+        )
+        return
+    }
+
+    respond(HttpStatusCode.NoContent)
 }
 
 private suspend fun io.ktor.server.application.ApplicationCall.handleRegister() {
