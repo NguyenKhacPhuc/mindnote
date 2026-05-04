@@ -43,4 +43,22 @@ data class OcrResponseDto(
 data class ErrorEnvelope(val error: ErrorBody)
 
 @Serializable
-data class ErrorBody(val code: String, val message: String)
+data class ErrorBody(
+    val code: String,
+    val message: String,
+    val fields: Map<String, String>? = null,
+)
+
+// --- Auth ---
+
+@Serializable
+data class RegisterRequestDto(val username: String, val password: String)
+
+@Serializable
+data class LoginRequestDto(val username: String, val password: String)
+
+@Serializable
+data class AccountDto(val id: String, val username: String)
+
+@Serializable
+data class AuthSuccessDto(val token: String, val account: AccountDto)
