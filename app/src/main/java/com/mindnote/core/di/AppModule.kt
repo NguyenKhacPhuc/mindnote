@@ -7,9 +7,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import android.util.Log
 import java.io.File
 import com.mindnote.BuildConfig
+import com.mindnote.core.auth.AuthEvents
 import com.mindnote.core.storage.UserPrefs
 import com.mindnote.data.db.MindNoteDatabase
 import com.mindnote.data.remote.AuthApi
+import com.mindnote.data.remote.AuthRevoked
 import com.mindnote.data.remote.BearerAuth
 import com.mindnote.data.remote.ChatApi
 import com.mindnote.data.remote.NotesApi
@@ -46,6 +48,7 @@ import org.koin.dsl.module
 
 val appModule = module {
     single { UserPrefs(androidContext()) }
+    single { AuthEvents() }
 
     single {
         Room.databaseBuilder(androidContext(), MindNoteDatabase::class.java, MindNoteDatabase.DB_NAME)
@@ -68,6 +71,7 @@ val appModule = module {
 
     single {
         val userPrefs = get<UserPrefs>()
+        val authEvents = get<AuthEvents>()
         val deviceId = userPrefs.deviceIdBlocking()
         Log.i("MindNote", "Device ID: $deviceId")
         HttpClient(OkHttp) {
@@ -85,6 +89,10 @@ val appModule = module {
             install(SSE)
             install(BearerAuth) {
                 tokenSource = { userPrefs.authTokenFlow.first() }
+            }
+            install(AuthRevoked) {
+                this.userPrefs = userPrefs
+                this.authEvents = authEvents
             }
             defaultRequest {
                 url(BuildConfig.BASE_URL)
