@@ -1,6 +1,8 @@
 package com.mindnote.util
 
+import androidx.paging.PagingData
 import com.mindnote.domain.model.Note
+import com.mindnote.domain.model.NoteFilter
 import com.mindnote.domain.repository.FavoritesRepository
 import com.mindnote.domain.repository.NotesRepository
 import com.mindnote.domain.repository.UserRepository
@@ -10,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
@@ -18,6 +21,7 @@ fun sampleNote(
     title: String = id,
     tags: List<String> = emptyList(),
     date: LocalDate = LocalDate.of(2026, 3, 1),
+    imagePath: String? = null,
 ): Note = Note(
     id = id,
     title = title,
@@ -25,14 +29,30 @@ fun sampleNote(
     body = "",
     tags = tags,
     date = date,
+    imagePath = imagePath,
 )
 
 class FakeNotesRepository(initial: List<Note> = emptyList()) : NotesRepository {
     private val _notes = MutableStateFlow(initial)
     val created: MutableList<Note> = mutableListOf()
-    var refreshCount = 0
+    var syncCount = 0
 
-    override val notes: Flow<List<Note>> = _notes.asStateFlow()
+    override fun notesPager(
+        filter: NoteFilter,
+        tag: String,
+        query: String,
+    ): Flow<PagingData<Note>> = flowOf(PagingData.empty())
+
+    override fun observeRecent(limit: Int): Flow<List<Note>> =
+        _notes.map { list -> list.sortedByDescending { it.date }.take(limit) }
+            .distinctUntilChanged()
+
+    override fun observeDistinctTags(): Flow<List<String>> =
+        _notes.map { list -> list.flatMap { it.tags }.distinct().sorted() }
+            .distinctUntilChanged()
+
+    override fun observeCount(): Flow<Int> =
+        _notes.map { it.size }.distinctUntilChanged()
 
     override fun observeNote(id: String): Flow<Note?> =
         _notes.map { list -> list.firstOrNull { it.id == id } }.distinctUntilChanged()
@@ -46,8 +66,8 @@ class FakeNotesRepository(initial: List<Note> = emptyList()) : NotesRepository {
         _notes.update { list -> list.filterNot { it.id == id } }
     }
 
-    override suspend fun refresh() {
-        refreshCount++
+    override suspend fun syncFirstPage(limit: Int) {
+        syncCount++
     }
 
     fun setNotes(list: List<Note>) {

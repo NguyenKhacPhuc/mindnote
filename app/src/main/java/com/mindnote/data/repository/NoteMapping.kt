@@ -10,4 +10,5 @@ internal fun NoteWithTopics.toDomain(): Note = Note(
     body = note.body,
     tags = topics.map { it.name },
     date = note.date,
+    imagePath = note.imagePath,
 )

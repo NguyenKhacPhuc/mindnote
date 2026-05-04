@@ -9,6 +9,7 @@ data class Note(
     val body: String,
     val tags: List<String>,
     val date: LocalDate,
+    val imagePath: String? = null,
 )
 
 data class ChatMessage(

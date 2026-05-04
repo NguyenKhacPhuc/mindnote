@@ -16,6 +16,18 @@
     <!-- Tabs -->
     <string name="tab_chat">Chat</string>
     <string name="tab_notes">Notes</string>
+    <string name="tab_scan">Scan</string>
+
+    <!-- Scan -->
+    <string name="scan_title">Scan a photo</string>
+    <string name="scan_placeholder">Pick or capture an image to extract text.</string>
+    <string name="scan_take_photo">Take photo</string>
+    <string name="scan_pick_gallery">Pick from gallery</string>
+    <string name="scan_remove">Remove</string>
+    <string name="scan_image_too_large">Image too large. Max 25 MB.</string>
+    <string name="scan_extract_text">Extract text</string>
+    <string name="scan_loading">Reading text from image…</string>
+    <string name="scan_review_placeholder">Edit the extracted text…</string>
 
     <!-- Onboarding -->
     <string name="onboarding_options_title">What do you want to use MindNote for?</string>

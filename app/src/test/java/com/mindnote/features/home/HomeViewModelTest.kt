@@ -7,6 +7,7 @@ import com.mindnote.util.sampleNote
 import java.time.LocalDate
 import java.time.LocalTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -52,6 +53,14 @@ class HomeViewModelTest {
         val state = vm.state.value
         assertEquals(listOf("d", "b", "c"), state.recents.map { it.id })
         assertTrue(state.summary.contains("4 notes"))
+    }
+
+    @Test
+    fun `OpenScan intent emits NavigateToScan effect`() = runTest {
+        val vm = HomeViewModel(FakeUserRepository(), FakeNotesRepository())
+        vm.send(HomeIntent.OpenScan)
+        val effect = vm.effects.first()
+        assertEquals(HomeEffect.NavigateToScan, effect)
     }
 
     @Test

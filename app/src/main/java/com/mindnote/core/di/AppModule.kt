@@ -1,14 +1,17 @@
 package com.mindnote.core.di
 
+import android.net.Uri
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import android.util.Log
+import java.io.File
 import com.mindnote.BuildConfig
 import com.mindnote.core.storage.UserPrefs
 import com.mindnote.data.db.MindNoteDatabase
 import com.mindnote.data.remote.ChatApi
 import com.mindnote.data.remote.NotesApi
+import com.mindnote.data.remote.OcrApi
 import com.mindnote.data.repository.LocalUserRepository
 import com.mindnote.data.repository.RoomFavoritesRepository
 import com.mindnote.data.repository.RoomNotesRepository
@@ -52,7 +55,7 @@ val appModule = module {
                     )
                 }
             })
-            .fallbackToDestructiveMigration()
+            .addMigrations(MindNoteDatabase.MIGRATION_1_2)
             .build()
     }
     single { get<MindNoteDatabase>().userDao() }
@@ -85,6 +88,7 @@ val appModule = module {
     }
     single { NotesApi(get()) }
     single { ChatApi(get()) }
+    single { OcrApi(get()) }
 
     single<NotesRepository> { RoomNotesRepository(get(), get(), get(), get()) }
     single<FavoritesRepository> { RoomFavoritesRepository(get(), get()) }
@@ -94,6 +98,31 @@ val appModule = module {
     viewModel { HomeViewModel(get(), get()) }
     viewModel { NotesViewModel(get(), get()) }
     viewModel { CaptureViewModel(get()) }
+    viewModel {
+        val ctx = androidContext()
+        val deviceId = get<UserPrefs>().deviceIdBlocking()
+        val ocrApi: com.mindnote.data.remote.OcrApi = get()
+        com.mindnote.features.scan.ScanViewModel(
+            ocrCall = { d, b, c -> ocrApi.ocr(d, b, c) },
+            notesRepository = get(),
+            deviceId = deviceId,
+            readBytes = { uriString ->
+                val uri = Uri.parse(uriString)
+                ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: error("Could not open image stream")
+            },
+            contentTypeOf = { uriString ->
+                val uri = Uri.parse(uriString)
+                ctx.contentResolver.getType(uri) ?: "image/jpeg"
+            },
+            saveImage = { noteId, bytes ->
+                val dir = File(ctx.filesDir, "ocr").apply { mkdirs() }
+                val file = File(dir, "$noteId.jpg")
+                file.writeBytes(bytes)
+                file.absolutePath
+            },
+        )
+    }
     viewModel { (conversationId: String) -> ChatViewModel(conversationId, get()) }
     viewModel { (noteId: String) -> NoteDetailViewModel(noteId, get(), get()) }
 }

@@ -36,6 +36,8 @@ fun Application.module() {
             ?: error("ANTHROPIC_API_KEY not set"),
     )
 
+    val ocrProvider: OcrProvider = installOcr()
+
     install(DefaultHeaders)
     install(CallLogging)
     install(ContentNegotiation) {
@@ -65,5 +67,6 @@ fun Application.module() {
         notesRoutes()
         favoritesRoutes()
         chatRoutes(chatProvider)
+        ocrRoutes(ocrProvider)
     }
 }
