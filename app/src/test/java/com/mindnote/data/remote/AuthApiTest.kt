@@ -111,4 +111,42 @@ class AuthApiTest {
         assertTrue("body should contain username, was: $capturedBody", capturedBody!!.contains("alice_42"))
         assertTrue("body should contain password, was: $capturedBody", capturedBody!!.contains("Hunter2!aB"))
     }
+
+    // ----- login -----
+
+    @Test
+    fun `login 200 returns Success with token and account`() = runTest {
+        val api = api(jsonResponse(
+            HttpStatusCode.OK,
+            """{"token":"login-tok","account":{"id":"acct-1","username":"alice_42"}}"""
+        ))
+
+        val result = api.login("alice_42", "Hunter2!aB")
+
+        result as AuthResult.Success
+        assertEquals("login-tok", result.value.token)
+        assertEquals("alice_42", result.value.account.username)
+    }
+
+    @Test
+    fun `login 401 returns Failure with invalid_credentials code`() = runTest {
+        val api = api(jsonResponse(
+            HttpStatusCode.Unauthorized,
+            """{"error":{"code":"invalid_credentials","message":"username or password is wrong"}}"""
+        ))
+
+        val result = api.login("alice_42", "wrong")
+
+        result as AuthResult.Failure
+        assertEquals(AuthErrorCodes.INVALID_CREDENTIALS, result.code)
+    }
+
+    @Test
+    fun `login on network failure returns NetworkError`() = runTest {
+        val api = api { throw IOException("dns lookup failed") }
+
+        val result = api.login("alice_42", "Hunter2!aB")
+
+        assertSame(AuthResult.NetworkError, result)
+    }
 }

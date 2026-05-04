@@ -18,6 +18,9 @@ class AuthApi(
     suspend fun register(username: String, password: String): AuthResult<AuthSuccessDto> =
         callForBody("auth/register", RegisterRequest(username, password))
 
+    suspend fun login(username: String, password: String): AuthResult<AuthSuccessDto> =
+        callForBody("auth/login", LoginRequest(username, password))
+
     private suspend inline fun <reified Req, reified Res> callForBody(
         path: String,
         body: Req,
