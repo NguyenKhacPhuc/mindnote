@@ -149,4 +149,53 @@ class AuthApiTest {
 
         assertSame(AuthResult.NetworkError, result)
     }
+
+    // ----- logout -----
+
+    @Test
+    fun `logout 204 returns Success`() = runTest {
+        val api = api {
+            respond(content = "", status = HttpStatusCode.NoContent)
+        }
+
+        val result = api.logout("opaque-tok")
+
+        result as AuthResult.Success
+        assertEquals(Unit, result.value)
+    }
+
+    @Test
+    fun `logout 401 returns Failure with invalid_token code`() = runTest {
+        val api = api(jsonResponse(
+            HttpStatusCode.Unauthorized,
+            """{"error":{"code":"invalid_token","message":"unknown or revoked token"}}"""
+        ))
+
+        val result = api.logout("stale-tok")
+
+        result as AuthResult.Failure
+        assertEquals(AuthErrorCodes.INVALID_TOKEN, result.code)
+    }
+
+    @Test
+    fun `logout on network failure returns NetworkError`() = runTest {
+        val api = api { throw IOException("offline") }
+
+        val result = api.logout("opaque-tok")
+
+        assertSame(AuthResult.NetworkError, result)
+    }
+
+    @Test
+    fun `logout sends the token in the Authorization Bearer header`() = runTest {
+        var capturedAuth: String? = null
+        val api = api { request ->
+            capturedAuth = request.headers[HttpHeaders.Authorization]
+            respond(content = "", status = HttpStatusCode.NoContent)
+        }
+
+        api.logout("opaque-tok-abc")
+
+        assertEquals("Bearer opaque-tok-abc", capturedAuth)
+    }
 }
