@@ -12,6 +12,7 @@ import com.mindnote.features.home.HomeScreen
 import com.mindnote.features.notedetail.NoteDetailScreen
 import com.mindnote.features.notes.NotesScreen
 import com.mindnote.features.onboarding.OnboardingScreen
+import com.mindnote.features.scan.ScanScreen
 
 @Composable
 fun MindNoteNavHost(startDestination: String = Routes.Onboarding) {
@@ -25,6 +26,7 @@ fun MindNoteNavHost(startDestination: String = Routes.Onboarding) {
                 onOpenChat = { id, text -> nav.navigate(Routes.chat(id, text)) },
                 onOpenNotes = { nav.navigate(Routes.Notes) },
                 onOpenCapture = { nav.navigate(Routes.Capture) },
+                onOpenScan = { nav.navigate(Routes.Scan) },
                 onOpenNote = { id -> nav.navigate(Routes.noteDetail(id)) },
             )
         }
@@ -64,6 +66,16 @@ fun MindNoteNavHost(startDestination: String = Routes.Onboarding) {
         }
         composable(Routes.Capture) {
             CaptureScreen(onDismiss = { nav.popBackStack() }, onSaved = { nav.popBackStack() })
+        }
+        composable(Routes.Scan) {
+            ScanScreen(
+                onDismiss = { nav.popBackStack() },
+                onSaved = { id ->
+                    nav.navigate(Routes.noteDetail(id)) {
+                        popUpTo(Routes.Home)
+                    }
+                },
+            )
         }
         composable(
             route = Routes.NoteDetail,

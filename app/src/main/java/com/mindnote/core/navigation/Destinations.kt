@@ -9,6 +9,7 @@ object Routes {
     const val Chat = "chat/{conversationId}?text={text}"
     const val Notes = "notes"
     const val Capture = "capture"
+    const val Scan = "scan"
     const val NoteDetail = "note/{noteId}"
 
     fun chat(id: String, text: String? = null): String {

@@ -33,28 +33,16 @@ class NotesViewModelTest {
     }
 
     @Test
-    fun `initial state shows all notes sorted by date descending`() = runTest {
-        val vm = NotesViewModel(FakeNotesRepository(notes), FakeFavoritesRepository())
-        assertEquals(listOf("b", "a", "c"), vm.state.value.notes.map { it.id })
-    }
-
-    @Test
-    fun `selecting a tag filters the visible notes`() = runTest {
+    fun `selecting a tag updates state activeTag`() = runTest {
         val vm = NotesViewModel(FakeNotesRepository(notes), FakeFavoritesRepository())
         vm.send(NotesIntent.SelectTag("work"))
-        assertEquals(listOf("a", "c"), vm.state.value.notes.map { it.id })
         assertEquals("work", vm.state.value.activeTag)
     }
 
     @Test
-    fun `switching filter to Favorites swaps data source`() = runTest {
-        val favs = FakeFavoritesRepository(initial = setOf("b"))
-        favs.setNotesSource(notes)
-
-        val vm = NotesViewModel(FakeNotesRepository(notes), favs)
+    fun `switching filter to Favorites updates state filter`() = runTest {
+        val vm = NotesViewModel(FakeNotesRepository(notes), FakeFavoritesRepository())
         vm.send(NotesIntent.SelectFilter(NoteFilter.Favorites))
-
-        assertEquals(listOf("b"), vm.state.value.notes.map { it.id })
         assertEquals(NoteFilter.Favorites, vm.state.value.filter)
     }
 

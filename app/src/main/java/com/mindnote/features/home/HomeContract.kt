@@ -13,6 +13,7 @@ sealed interface HomeIntent : UiIntent {
     data class OpenNote(val id: String) : HomeIntent
     data object OpenNotes : HomeIntent
     data object OpenCapture : HomeIntent
+    data object OpenScan : HomeIntent
     data object OpenProfile : HomeIntent
 }
 
@@ -29,5 +30,6 @@ sealed interface HomeEffect : UiEffect {
     data class NavigateToChat(val conversationId: String, val initialText: String? = null) : HomeEffect
     data object NavigateToNotes : HomeEffect
     data object NavigateToCapture : HomeEffect
+    data object NavigateToScan : HomeEffect
     data class NavigateToNote(val id: String) : HomeEffect
 }

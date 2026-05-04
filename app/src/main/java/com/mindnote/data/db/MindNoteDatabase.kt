@@ -3,6 +3,8 @@ package com.mindnote.data.db
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mindnote.data.db.dao.FavoriteDao
 import com.mindnote.data.db.dao.NoteDao
 import com.mindnote.data.db.dao.TopicDao
@@ -21,7 +23,7 @@ import com.mindnote.data.db.entities.UserEntity
         NoteTopicCrossRef::class,
         FavoriteEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -34,5 +36,11 @@ abstract class MindNoteDatabase : RoomDatabase() {
     companion object {
         const val DB_NAME = "mindnote.db"
         const val LOCAL_USER_ID = "local"
+
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE notes ADD COLUMN imagePath TEXT")
+            }
+        }
     }
 }

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.NoteAdd
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,6 +66,7 @@ fun HomeScreen(
     onOpenChat: (conversationId: String, initialText: String?) -> Unit,
     onOpenNotes: () -> Unit,
     onOpenCapture: () -> Unit,
+    onOpenScan: () -> Unit,
     onOpenNote: (String) -> Unit,
     vm: HomeViewModel = koinViewModel(),
 ) {
@@ -76,6 +78,7 @@ fun HomeScreen(
                 is HomeEffect.NavigateToChat -> onOpenChat(effect.conversationId, effect.initialText)
                 HomeEffect.NavigateToNotes -> onOpenNotes()
                 HomeEffect.NavigateToCapture -> onOpenCapture()
+                HomeEffect.NavigateToScan -> onOpenScan()
                 is HomeEffect.NavigateToNote -> onOpenNote(effect.id)
             }
         }
@@ -139,6 +142,7 @@ fun HomeScreen(
             modifier = Modifier.align(Alignment.BottomCenter),
             onNotes = { vm.send(HomeIntent.OpenNotes) },
             onCapture = { vm.send(HomeIntent.OpenCapture) },
+            onScan = { vm.send(HomeIntent.OpenScan) },
         )
     }
 }
@@ -257,7 +261,12 @@ private fun RecentNoteCard(note: Note, onClick: () -> Unit) {
 }
 
 @Composable
-private fun BottomTabBar(modifier: Modifier, onNotes: () -> Unit, onCapture: () -> Unit) {
+private fun BottomTabBar(
+    modifier: Modifier,
+    onNotes: () -> Unit,
+    onCapture: () -> Unit,
+    onScan: () -> Unit,
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -275,22 +284,43 @@ private fun BottomTabBar(modifier: Modifier, onNotes: () -> Unit, onCapture: () 
             Box(modifier = Modifier.size(48.dp)) {}
             TabItem(stringResource(R.string.tab_notes), Icons.Outlined.MenuBook, active = false, onClick = onNotes)
         }
-        Box(
+        Row(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = (-20).dp)
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MindNoteTheme.colors.accent)
-                .clickable { onCapture() },
-            contentAlignment = Alignment.Center,
+                .offset(y = (-20).dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Add,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(22.dp),
-            )
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MindNoteTheme.colors.accent)
+                    .clickable { onCapture() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Add,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MindNoteTheme.colors.accent)
+                    .clickable { onScan() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.PhotoCamera,
+                    contentDescription = stringResource(R.string.tab_scan),
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
         }
     }
 }

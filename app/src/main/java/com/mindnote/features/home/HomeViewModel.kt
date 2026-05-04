@@ -69,6 +69,7 @@ class HomeViewModel(
             is HomeIntent.OpenNote -> emit(HomeEffect.NavigateToNote(intent.id))
             HomeIntent.OpenNotes -> emit(HomeEffect.NavigateToNotes)
             HomeIntent.OpenCapture -> emit(HomeEffect.NavigateToCapture)
+            HomeIntent.OpenScan -> emit(HomeEffect.NavigateToScan)
             HomeIntent.OpenProfile -> Unit
         }
     }

@@ -68,7 +68,7 @@ class RoomNotesRepository(
 
     override suspend fun create(note: Note) {
         val saved = api.create(note.toCreateDto())
-        noteDao.insert(saved.toEntity())
+        noteDao.insert(saved.toEntity(imagePath = note.imagePath))
         if (saved.tags.isNotEmpty()) {
             topicDao.insertTopics(saved.topicEntities())
             topicDao.clearForNote(saved.id)
@@ -84,9 +84,11 @@ class RoomNotesRepository(
     override suspend fun syncFirstPage(limit: Int) {
         val page = runCatching { api.listNotes(offset = 0, limit = limit) }.getOrNull() ?: return
         db.withTransaction {
+            val preserved = noteDao.imagePathsForUser(LOCAL_USER_ID)
+                .associate { it.id to it.imagePath }
             noteDao.clearForUser(LOCAL_USER_ID)
             if (page.isNotEmpty()) {
-                noteDao.insertAll(page.map { it.toEntity() })
+                noteDao.insertAll(page.map { it.toEntity(imagePath = preserved[it.id]) })
                 val topics = page.flatMap { it.topicEntities() }.distinctBy { it.name }
                 if (topics.isNotEmpty()) topicDao.insertTopics(topics)
                 page.forEach { dto ->

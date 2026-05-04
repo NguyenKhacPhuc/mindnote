@@ -25,4 +25,5 @@ data class NoteEntity(
     val preview: String,
     val body: String,
     val date: LocalDate,
+    val imagePath: String? = null,
 )

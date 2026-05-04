@@ -7,13 +7,14 @@ import com.mindnote.data.db.entities.TopicEntity
 import com.mindnote.domain.model.Note
 import java.time.LocalDate
 
-internal fun NoteDto.toEntity(): NoteEntity = NoteEntity(
+internal fun NoteDto.toEntity(imagePath: String? = null): NoteEntity = NoteEntity(
     id = id,
     userId = LOCAL_USER_ID,
     title = title,
     preview = preview,
     body = body,
     date = LocalDate.parse(date),
+    imagePath = imagePath,
 )
 
 internal fun NoteDto.topicEntities(): List<TopicEntity> = tags.map(::TopicEntity)

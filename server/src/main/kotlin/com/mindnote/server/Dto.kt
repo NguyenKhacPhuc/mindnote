@@ -32,3 +32,15 @@ data class ChatMessageDto(
 
 @Serializable
 data class SendMessageDto(val text: String)
+
+@Serializable
+data class OcrResponseDto(
+    val text: String,
+    val languageHint: String = "",
+)
+
+@Serializable
+data class ErrorEnvelope(val error: ErrorBody)
+
+@Serializable
+data class ErrorBody(val code: String, val message: String)

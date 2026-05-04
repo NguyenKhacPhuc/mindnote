@@ -21,6 +21,14 @@ interface NoteDao {
     @Query("SELECT COUNT(*) FROM notes WHERE userId = :userId")
     suspend fun count(userId: String): Int
 
+    @Query("SELECT imagePath FROM notes WHERE id = :id")
+    suspend fun imagePathOf(id: String): String?
+
+    @Query("SELECT id, imagePath FROM notes WHERE userId = :userId AND imagePath IS NOT NULL")
+    suspend fun imagePathsForUser(userId: String): List<NoteImagePath>
+
+    data class NoteImagePath(val id: String, val imagePath: String)
+
     @Query("SELECT COUNT(*) FROM notes WHERE userId = :userId")
     fun observeCount(userId: String): Flow<Int>
 

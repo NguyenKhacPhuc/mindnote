@@ -25,6 +25,23 @@ class DtoMappingTest {
         assertEquals(LOCAL_USER_ID, entity.userId)
         assertEquals("Pricing brainstorm", entity.title)
         assertEquals(LocalDate.of(2026, 3, 8), entity.date)
+        assertEquals(null, entity.imagePath)
+    }
+
+    @Test
+    fun `NoteDto toEntity preserves imagePath when supplied`() {
+        val dto = NoteDto(
+            id = "n5",
+            title = "scan",
+            preview = "p",
+            body = "b",
+            tags = emptyList(),
+            date = "2026-04-05",
+        )
+
+        val entity = dto.toEntity(imagePath = "/data/.../scan.jpg")
+
+        assertEquals("/data/.../scan.jpg", entity.imagePath)
     }
 
     @Test
