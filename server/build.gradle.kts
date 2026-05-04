@@ -52,6 +52,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    testImplementation("com.h2database:h2:2.3.232")
 }
 
 tasks.withType<Test>().configureEach {
