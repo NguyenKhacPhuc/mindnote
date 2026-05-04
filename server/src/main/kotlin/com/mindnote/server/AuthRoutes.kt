@@ -18,8 +18,65 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 fun Route.authRoutes() {
     route("/auth") {
         post("/register") { call.handleRegister() }
+        post("/login") { call.handleLogin() }
     }
 }
+
+private suspend fun io.ktor.server.application.ApplicationCall.handleLogin() {
+    val body = receive<LoginRequestDto>()
+    val username = body.username.lowercase()
+
+    val account = newSuspendedTransaction {
+        AuthAccounts.selectAll()
+            .where { AuthAccounts.username eq username }
+            .firstOrNull()
+            ?.let {
+                Account(
+                    id = it[AuthAccounts.id],
+                    username = it[AuthAccounts.username],
+                    passwordHash = it[AuthAccounts.passwordHash],
+                    createdAt = it[AuthAccounts.createdAt],
+                )
+            }
+    }
+
+    // Per Decision D3: non-distinguishing — same response whether the username doesn't exist
+    // or the password is wrong. Argon2id verify is timing-safe; we still do the verify even
+    // when the account is null (against a throwaway hash) to keep response time consistent.
+    val passwordOk = if (account != null) {
+        Passwords.verify(account.passwordHash, body.password)
+    } else {
+        Passwords.verify(DUMMY_HASH, body.password)
+        false
+    }
+
+    if (account == null || !passwordOk) {
+        respond(
+            HttpStatusCode.Unauthorized,
+            ErrorEnvelope(ErrorBody(code = "invalid_credentials", message = "username or password is wrong")),
+        )
+        return
+    }
+
+    val token = newToken()
+    val now = System.currentTimeMillis()
+    newSuspendedTransaction {
+        AuthTokens.insert {
+            it[AuthTokens.token] = token
+            it[AuthTokens.accountId] = account.id
+            it[AuthTokens.createdAt] = now
+        }
+    }
+
+    respond(HttpStatusCode.OK, AuthSuccessDto(
+        token = token,
+        account = AccountDto(id = account.id, username = account.username),
+    ))
+}
+
+// Pre-computed Argon2id hash so the unknown-username path takes the same time as the
+// wrong-password path. Computed once on first use.
+private val DUMMY_HASH: String by lazy { Passwords.hash("dummy-for-timing-safety") }
 
 private suspend fun io.ktor.server.application.ApplicationCall.handleRegister() {
     val body = receive<RegisterRequestDto>()
